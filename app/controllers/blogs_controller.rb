@@ -10,7 +10,13 @@ class BlogsController < ApplicationController
     @blogs = Blog.search(params[:term]).published.default_order
   end
 
-  def show;  end
+  def show
+    if user_signed_in?
+      @blog = current_user.blogs.find_by(id: params[:id], secret: true) || Blog.published.find(params[:id])
+    else
+      @blog = Blog.published.find(params[:id])
+    end
+  end
 
   def new
     @blog = Blog.new
