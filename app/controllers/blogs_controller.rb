@@ -11,11 +11,11 @@ class BlogsController < ApplicationController
   end
 
   def show
-    if user_signed_in?
-      @blog = current_user.blogs.find_by(id: params[:id], secret: true) || Blog.published.find(params[:id])
-    else
-      @blog = Blog.published.find(params[:id])
-    end
+    @blog = if user_signed_in?
+              current_user.blogs.find_by(id: params[:id], secret: true) || Blog.published.find(params[:id])
+            else
+              Blog.published.find(params[:id])
+            end
   end
 
   def new
@@ -23,9 +23,9 @@ class BlogsController < ApplicationController
   end
 
   def edit
-    unless @blog.owned_by?(current_user)
-      redirect_to blog_url(@blog), alert:"アクセスできません"
-    end
+    return if @blog.owned_by?(current_user)
+
+    redirect_to blog_url(@blog), alert: 'アクセスできません'
   end
 
   def create
@@ -63,7 +63,7 @@ class BlogsController < ApplicationController
   end
 
   def blog_params
-    permitted_params = [:title, :content, :secret]
+    permitted_params = %i[title content secret]
     permitted_params << :random_eyecatch if current_user.premium?
     params.require(:blog).permit(permitted_params)
   end
