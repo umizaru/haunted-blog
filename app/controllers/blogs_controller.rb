@@ -11,11 +11,7 @@ class BlogsController < ApplicationController
   end
 
   def show
-    @blog = if user_signed_in?
-              current_user.blogs.find_by(id: params[:id], secret: true) || Blog.published.find(params[:id])
-            else
-              Blog.published.find(params[:id])
-            end
+    @blog = Blog.find_blog(current_user, params[:id])
   end
 
   def new
