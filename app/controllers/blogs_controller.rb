@@ -3,19 +3,26 @@
 class BlogsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[index show]
 
-  before_action :set_blog, only: %i[show edit update destroy]
+  before_action :set_blog, only: %i[show]
+  before_action :set_current_user_blog, only: %i[edit update destroy]
 
   def index
     @blogs = Blog.search(params[:term]).published.default_order
   end
 
-  def show; end
+  def show
+    @blog = Blog.find_blog(current_user, params[:id])
+  end
 
   def new
     @blog = Blog.new
   end
 
-  def edit; end
+  def edit
+    return if @blog.owned_by?(current_user)
+
+    redirect_to blog_url(@blog), alert: 'アクセスできません'
+  end
 
   def create
     @blog = current_user.blogs.new(blog_params)
@@ -47,7 +54,13 @@ class BlogsController < ApplicationController
     @blog = Blog.find(params[:id])
   end
 
+  def set_current_user_blog
+    @blog = current_user.blogs.find(params[:id])
+  end
+
   def blog_params
-    params.require(:blog).permit(:title, :content, :secret, :random_eyecatch)
+    permitted_params = %i[title content secret]
+    permitted_params << :random_eyecatch if current_user.premium?
+    params.require(:blog).permit(permitted_params)
   end
 end
